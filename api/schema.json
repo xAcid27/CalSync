@@ -75,6 +75,15 @@
         ]
       },
       {
+        "name": "getCredentials",
+        "type": "function",
+        "async": true,
+        "description": "Liest Zugangsdaten aus dem Thunderbird-Passwort-Manager",
+        "parameters": [
+          { "name": "origin", "type": "string" }
+        ]
+      },
+      {
         "name": "resetSyncState",
         "type": "function",
         "async": true,
