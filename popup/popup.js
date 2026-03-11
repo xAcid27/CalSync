@@ -1,4 +1,4 @@
-// Kalender Sync - popup.js v1.9
+// Kalender Sync - popup.js
 
 const sourceSelect = document.getElementById("sourceCalendar");
 const targetSelect = document.getElementById("targetCalendar");
@@ -8,10 +8,6 @@ const statusEl     = document.getElementById("status");
 const progressBar  = document.getElementById("progressBar");
 const progressFill = document.getElementById("progressFill");
 const statsEl      = document.getElementById("stats");
-const credUserEl   = document.getElementById("credUser");
-const credPassEl   = document.getElementById("credPass");
-const saveCredBtn  = document.getElementById("saveCredBtn");
-const credStatusEl = document.getElementById("credStatus");
 
 function setStatus(msg, type = "info") {
   statusEl.textContent = msg;
@@ -27,27 +23,6 @@ function showStats(total, skipped, copied, failed) {
   document.getElementById("statCopied").textContent = copied;
   statsEl.classList.add("visible");
 }
-
-// Credentials laden/speichern
-async function loadCreds() {
-  try {
-    const stored = await browser.storage.local.get(["caldavUser", "caldavPass"]);
-    if (stored.caldavUser) {
-      credUserEl.value = stored.caldavUser;
-      credPassEl.value = stored.caldavPass || "";
-      credStatusEl.textContent = "✓ Zugangsdaten geladen";
-    }
-  } catch(e) { /* ignore */ }
-}
-
-saveCredBtn.addEventListener("click", async () => {
-  const user = credUserEl.value.trim();
-  const pass = credPassEl.value;
-  if (!user) { credStatusEl.textContent = "⚠ Benutzername fehlt"; return; }
-  await browser.storage.local.set({ caldavUser: user, caldavPass: pass });
-  credStatusEl.textContent = "✓ Gespeichert!";
-  setTimeout(() => { credStatusEl.textContent = ""; }, 2000);
-});
 
 async function loadCalendars() {
   setStatus("Kalender werden geladen…", "loading");
@@ -100,6 +75,14 @@ async function syncCalendars() {
     const syncedSet = new Set(syncedIds);
     console.log("[KalenderSync] Bereits synchronisiert:", syncedSet.size);
 
+    // Credentials prüfen
+    const storedCreds = await browser.calendarSync.getCredentials("https://www.b-tu.de");
+    if (!storedCreds) {
+      setStatus("⚠️ Keine Zugangsdaten gefunden. Bitte CalDAV-Kalender in Thunderbird einrichten.", "error");
+      syncBtn.disabled = false;
+      return;
+    }
+
     setProgress(50);
     let copied = 0, skipped = 0, failed = 0;
     const total = sourceItems.length;
@@ -115,9 +98,7 @@ async function syncCalendars() {
       }
 
       try {
-        const stored = await browser.storage.local.get(["caldavUser", "caldavPass"]);
-        const creds = { user: stored.caldavUser || "", pass: stored.caldavPass || "" };
-        await browser.calendarSync.addItem(targetId, item, creds);
+        await browser.calendarSync.addItem(targetId, item, null);
         await browser.calendarSync.markAsSynced(sourceId, targetId, item.id);
         syncedSet.add(item.id);
         copied++;
@@ -131,7 +112,6 @@ async function syncCalendars() {
 
     setProgress(100);
     setTimeout(() => setProgress(0), 800);
-
     showStats(total, skipped, copied, failed);
 
     if (failed > 0 && copied === 0) {
@@ -163,5 +143,4 @@ async function resetSyncState() {
 
 syncBtn.addEventListener("click", syncCalendars);
 resetBtn.addEventListener("click", resetSyncState);
-loadCreds();
 loadCalendars();

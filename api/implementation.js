@@ -246,16 +246,30 @@ var calendarSync = class extends ExtensionCommon.ExtensionAPI {
           ical.push("END:VEVENT", "END:VCALENDAR");
           const icalStr = ical.join("\r\n") + "\r\n";
 
-          // Basic Auth aus übergebenen Credentials
+          Cu.importGlobalProperties(["btoa"]);
+
+          // Credentials aus dem Thunderbird-Passwort-Manager holen
+          const calOrigin = calUri.match(/^(https?:\/\/[^/]+)/)?.[1] || "";
           const headers = { "Content-Type": "text/calendar; charset=utf-8" };
-          if (creds && creds.user) {
-            Cu.importGlobalProperties(["btoa"]);
-            const b64 = btoa(unescape(encodeURIComponent(creds.user + ":" + (creds.pass || ""))));
+
+          let resolvedCreds = null;
+
+          // Thunderbird speichert CalDAV-Logins mit httpRealm "Horde DAV Server"
+          try {
+            const logins = Services.logins.findLogins(calOrigin, null, "Horde DAV Server");
+            if (logins.length > 0) {
+              resolvedCreds = { user: logins[0].username, pass: logins[0].password };
+              console.log(`[KalenderSync] Auth (Thunderbird): ${resolvedCreds.user}@${calOrigin}`);
+            }
+          } catch(e) {
+            console.log(`[KalenderSync] Login-Manager Fehler: ${e.message}`);
+          }
+
+          if (resolvedCreds) {
+            const b64 = btoa(unescape(encodeURIComponent(resolvedCreds.user + ":" + (resolvedCreds.pass || ""))));
             headers["Authorization"] = "Basic " + b64;
-            const hostname = calUri.match(/^https?:\/\/([^/]+)/)?.[1] || calUri;
-            console.log(`[KalenderSync] Auth: ${creds.user}@${hostname}`);
           } else {
-            console.log("[KalenderSync] ⚠ Keine Zugangsdaten – bitte im Popup eingeben!");
+            console.log("[KalenderSync] ⚠ Keine Zugangsdaten – bitte im Popup unter 🔑 eingeben!");
           }
 
           console.log(`[KalenderSync] PUT ${putUrl}`);
@@ -277,6 +291,19 @@ var calendarSync = class extends ExtensionCommon.ExtensionAPI {
           saveSyncState(state);
           console.log('[KalenderSync] Sync-State zurückgesetzt für: ' + key);
           return true;
+        },
+
+        async getCredentials(origin) {
+          // Erst Thunderbird-nativen Horde-Eintrag prüfen, dann manuell gespeicherten
+          for (const realm of ["Horde DAV Server", "KalenderSync"]) {
+            try {
+              const logins = Services.logins.findLogins(origin, null, realm);
+              if (logins.length > 0) {
+                return { user: logins[0].username, pass: logins[0].password };
+              }
+            } catch(e) { /* ignore */ }
+          }
+          return null;
         }
       }
     };
