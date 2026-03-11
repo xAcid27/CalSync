@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+  "name": "Kalender Sync",
+  "version": "1.3.0",
+  "description": "Kopiert Termine von einem Kalender in einen anderen ohne Duplikate.",
+  "applications": {
+    "gecko": {
+      "id": "kalender-sync@addon.local",
+      "strict_min_version": "115.0"
+    }
+  },
+  "icons": { "48": "icons/icon48.png", "96": "icons/icon96.png" },
+  "browser_action": {
+    "default_title": "Kalender Sync",
+    "default_icon": { "48": "icons/icon48.png" },
+    "default_popup": "popup/popup.html"
+  },
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": { "default": "Ctrl+Shift+Y" },
+      "description": "Kalender Sync öffnen"
+    }
+  },
+  "experiment_apis": {
+    "calendarSync": {
+      "schema": "api/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "api/implementation.js",
+        "paths": [["calendarSync"]]
+      }
+    }
+  },
+  "permissions": ["menus", "storage"],
+  "background": { "scripts": ["background.js"] }
+}

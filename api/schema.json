@@ -1,0 +1,89 @@
+[
+  {
+    "namespace": "calendarSync",
+    "description": "API zum Lesen und Schreiben von Kalenderterminen",
+    "functions": [
+      {
+        "name": "getCalendars",
+        "type": "function",
+        "async": true,
+        "parameters": []
+      },
+      {
+        "name": "getItems",
+        "type": "function",
+        "async": true,
+        "parameters": [
+          { "name": "calendarId", "type": "string" }
+        ]
+      },
+      {
+        "name": "getSyncedIds",
+        "type": "function",
+        "async": true,
+        "parameters": [
+          { "name": "sourceId", "type": "string" },
+          { "name": "targetId", "type": "string" }
+        ]
+      },
+      {
+        "name": "markAsSynced",
+        "type": "function",
+        "async": true,
+        "parameters": [
+          { "name": "sourceId", "type": "string" },
+          { "name": "targetId", "type": "string" },
+          { "name": "itemId",   "type": "string" }
+        ]
+      },
+      {
+        "name": "addItem",
+        "type": "function",
+        "async": true,
+        "parameters": [
+          { "name": "calendarId", "type": "string" },
+          {
+            "name": "item",
+            "type": "object",
+            "properties": {
+              "id":          { "type": "string" },
+              "title":       { "type": "string" },
+              "startDate":   { "type": "string",  "optional": true },
+              "endDate":     { "type": "string",  "optional": true },
+              "startTzId":   { "type": "string",  "optional": true },
+              "endTzId":     { "type": "string",  "optional": true },
+              "description": { "type": "string",  "optional": true },
+              "location":    { "type": "string",  "optional": true },
+              "isAllDay":    { "type": "boolean", "optional": true },
+              "icalString":  { "type": "string",  "optional": true },
+              "rrules": {
+                "type": "array",
+                "items": { "type": "string" },
+                "optional": true
+              }
+            }
+          },
+          {
+            "name": "creds",
+            "type": "object",
+            "optional": true,
+            "properties": {
+              "user": { "type": "string" },
+              "pass": { "type": "string" }
+            }
+          }
+        ]
+      },
+      {
+        "name": "resetSyncState",
+        "type": "function",
+        "async": true,
+        "description": "Resets sync state for a source/target pair",
+        "parameters": [
+          { "name": "sourceId", "type": "string" },
+          { "name": "targetId", "type": "string" }
+        ]
+      }
+    ]
+  }
+]
